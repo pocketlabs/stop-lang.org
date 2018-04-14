@@ -75,12 +75,22 @@
     }
         </pre>
         <p>
+            A state can be asynchronous.  Asynchronous states require a timeout to be defined.  Timeouts require a transition to be defined in the event the call to this state times out.
+        </p>
+        <pre>
+    async CreatePost {
+        Post post
+        timeout 30 -> TimeoutError
+        -> Redirect
+    }
+        </pre>
+        <p>
             A state can also yield a single value and return it.  Value states are utilized as dynamic properties.
         </p>
         <pre>
     async GetUser <- User {
         uint64 user_id
-        timeout 5
+        timeout 5 -> TimeoutError
     }
 
     Profile {
@@ -162,7 +172,7 @@
         <pre>
     async GetUser <- User throws UserNotFoundError {
         uint64 user_id
-        timeout 5
+        timeout 5 -> TimeoutError
     }
 
     Profile {
@@ -214,6 +224,35 @@
         uint32 status
         string content_type
         string body
+    }
+        </pre>
+        <h2>Asynchronous States</h2>
+        <p>
+            By default all states in Stop are treated as synchronous states.  In order to designate a state is asynchronous the <code>async</code> keyword needs to proceed the state name.
+        </p>
+        <p>
+            A state cannot be asynchronous and considered a starting or stopping state.  This means a system cannot start ot stop on an asynchronous state.
+        </p>
+        <p>
+            Asynchronous states require a timeout to be defined in seconds that is greater than 0.  A transition must also be defined to handle the timeout occurring.  On a timeout the system will halt and transition to the defined state.
+        </p>
+        <p>
+            An asynchronous state example:
+        </p>
+    <pre>
+    async CreatePost {
+        Post post
+        timeout 30 -> TimeoutError
+        -> Redirect
+    }
+    </pre>
+        <p>
+            An asynchronous value state that can be used as a dynamic property:
+        </p>
+        <pre>
+    async GetUser <- User {
+        uint64 user_id
+        timeout 5 -> TimeoutError
     }
         </pre>
         <h2>Errors</h2>
