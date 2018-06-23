@@ -194,6 +194,35 @@
         -> Render
     }
         </pre>
+        <h3>Optional properties</h3>
+        <p>
+            A property can be made optional by prefixing the definition with the keyword <code>optional</code>.  Otherwise properties default to being required.
+        </p>
+        <p>
+            Optional properties can be left undefined when building an instance of a State.  Any Stop runtime implementation should be dynamically checking for optionality during state transition validation.
+        </p>
+        <p>
+            Use optionals sparingly.  State implementations that rely on States with optionals will have to handle the ambiguity presented by properties that could be undefined.
+        </p>
+        <p>
+            In the example below a body property is optional and likely only used on POST requests.
+        </p>
+        <pre>
+    Request {
+        enum Method {
+            GET
+            POST
+            PUT
+            DELETE
+            OPTIONS
+        }
+        Method method
+        string path
+        optional string body
+        [Header] headers
+        [Parameter] parameters
+    }
+        </pre>
         <h2>Transitions</h2>
         <p>
             Transitions are defined within a state with the <code>-></code> operator following by a reference to defined state.
