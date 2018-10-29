@@ -91,9 +91,13 @@
             A state can be asynchronous.  Asynchronous states require a timeout to be defined.  Timeouts require a transition to be defined in the event the call to this state times out.
         </p>
         <pre>
+    CreatePostTimeoutError {
+        CreatePost timedOutState
+    }
+
     async CreatePost {
         Post post
-        timeout 30 -> TimeoutError
+        timeout 30 -> CreatePostTimeoutError
         -> Redirect
     }
         </pre>
@@ -101,9 +105,13 @@
             A state can also yield a single value and return it.  Value states are utilized as dynamic properties.
         </p>
         <pre>
+    GetUserTimeoutError {
+        GetUser timedOutState
+    }
+
     async GetUser <- User {
         uint64 user_id
-        timeout 5 -> TimeoutError
+        timeout 5 -> GetUserTimeoutError
     }
 
     Profile {
@@ -116,10 +124,14 @@
             A state can be a queue state.  Queue states are a special kind of state that cannot be transitioned to.  Instead they can only be added to with the promise that the queue will state will be executed at some later time.
         </p>
         <pre>
+    CreatePostTimeoutError {
+        CreatePost timedOutState
+    }
+
     async CreatePost {
         Post post
         >> PushNotification
-        timeout 30 -> TimeoutError
+        timeout 30 -> CreatePostTimeoutError
         -> Redirect
     }
 
@@ -203,9 +215,13 @@
             Here in the Profile state user_id would be a required property while the user property is dynamic.  The user property will be retrieved by calling the asynchronous value state GetUser with the mapped user_id property.  GetUser is responsible for returning a User object within a 5 second timeout.  The Profile state is valid after it has gathered all of its required and dynamic properties successfully.
         </p>
         <pre>
+    GetUserTimeoutError {
+        GetUser timedOutState
+    }
+    
     async GetUser <- User throws UserNotFoundError {
         uint64 user_id
-        timeout 5 -> TimeoutError
+        timeout 5 -> GetUserTimeoutError
     }
 
     Profile {
@@ -299,12 +315,19 @@
             Asynchronous states require a timeout to be defined in seconds that is greater than 0.  A transition must also be defined to handle the timeout occurring.  On a timeout the system will halt and transition to the defined state.
         </p>
         <p>
+            The state the timeout transitions to must contain one state property called <code>timedOutState</code> that has references the state from which the timeout transition was defined.  Timeouts are managed by an implementing Stop runtime and while a given state may timeout the goal is to transition to a timeout state with some context so there is a chance to respond to a timeout event.
+        </p>
+        <p>
             An asynchronous state example:
         </p>
     <pre>
+    CreatePostTimeoutError {
+        CreatePost timedOutState
+    }
+
     async CreatePost {
         Post post
-        timeout 30 -> TimeoutError
+        timeout 30 -> CreatePostTimeoutError
         -> Redirect
     }
     </pre>
@@ -312,9 +335,13 @@
             An asynchronous value state that can be used as a dynamic property:
         </p>
         <pre>
+    GetUserTimeoutError {
+        GetUser timedOutState
+    }
+
     async GetUser <- User {
         uint64 user_id
-        timeout 5 -> TimeoutError
+        timeout 5 -> GetUserTimeoutError
     }
         </pre>
         <h2>Queue States</h2>
@@ -334,8 +361,12 @@
     async CreatePost {
         Post post
         >> PushNotification
-        timeout 30 -> TimeoutError
+        timeout 30 -> CreatePostTimeoutError
         -> Redirect
+    }
+
+    CreatePostTimeoutError {
+        CreatePost timedOutState
     }
 
     queue PushNotification {
