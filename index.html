@@ -212,7 +212,7 @@
             They are defined like any other property but with a <code><-</code> operator following by a reference to a value state that returns the same property type.
         </p>
         <p>
-            Here in the Profile state user_id would be a required property while the user property is dynamic.  The user property will be retrieved by calling the asynchronous value state GetUser with the mapped user_id property.  GetUser is responsible for returning a User object within a 5 second timeout.  The Profile state is valid after it has gathered all of its required and dynamic properties successfully.
+            Here in the Profile state user_id would be a required property while the user property is dynamic.  The user property will be retrieved by calling the asynchronous value state GetUser with the implicitly mapped user_id property.  GetUser is responsible for returning a User object within a 5 second timeout.  The Profile state is valid after it has gathered all of its required and dynamic properties successfully.
         </p>
         <pre>
     GetUserTimeoutError {
@@ -230,6 +230,34 @@
         -> Render
     }
         </pre>
+        <p>
+            In the above example GetUser is implicitly passed the <strong>user_id</strong> property from the Profile state.  The property type and name need to match exactly in order for this default behavior to work.
+        </p>
+        <p>
+            There will definitely be times when property names do not match between states like Profile and providing states like GetUser.  Let's tweak the above example and have Profile contain the property <strong>id</strong> instead of <strong>user_id</strong>.  We need to add a mapping clause to our GetUser invocation to map the <string>id</string> to the <strong>user_id</strong> property the GetUser state is expecting.
+        </p>
+        <pre>
+    GetUserTimeoutError {
+        GetUser timedOutState
+    }
+    
+    async GetUser <- User throws UserNotFoundError {
+        uint64 user_id
+        timeout 5 -> GetUserTimeoutError
+    }
+
+    Profile {
+        uint64 id
+        User user <- GetUser(user_id: id)
+        -> Render
+    }
+        </pre>
+        <p>
+            Stop will now map the Profile <strong>id</strong> property to <strong>user_id</strong> when the call to GetUser is made.
+        </p>
+        <p>
+            You can map and rename none, some or all of a state's properties.  Any provider state properties not enumerated in a mapping will assume the property name defined within the provider state is the exactly same name and type defined within the state.  This is the default behavior.
+        </p>
         <h3>Optional properties</h3>
         <p>
             A property can be made optional by prefixing the definition with the keyword <code>optional</code>.  Otherwise properties default to being required.
@@ -257,6 +285,29 @@
         optional string body
         [Header] headers
         [Parameter] parameters
+    }
+        </pre>
+        <p>
+            Dynamic properties can be optionally dependent.  If the providing State of a dynamic property is dependent upon optional properties it too can be marked as optional.  The dynamic property will only be fulfilled if the optional properties it depends upon are present.  Otherwise it too is made optional and left empty. 
+        </p>
+        <p>
+            In the follow example a user's posts are only gathered into the field <strong>currentUserPosts</strong> if the user is logged in and a <strong>currentUser</strong> is set.  If <strong>currentUser</strong> isn't set when transitioning to the Dashboard state the the call to the asynchronous state of GetCurrentUserPosts will not happen and the dynamic property <storng>currentUserPosts</storng> will remain empty.
+        </p>
+        <pre>
+    async GetCurrentUserPosts <- [Post] {
+        User currentUser
+        timeout 30 -> GetCurrentUserPostsTimeout
+    }
+
+    GetCurrentUserPostsTimeout {
+        GetCurrentUserPosts timedOutState
+        -> TimeoutError
+    }
+
+    Dashboard {
+        [Post] latestPosts
+        optional User currentUser
+        optional [Post] currentUserPosts <- GetCurrentUserPosts
     }
         </pre>
         <h2>Transitions</h2>
@@ -371,6 +422,7 @@
 
     queue PushNotification {
         Post post
+        -> SendPushNotification
     }
 
     stop SendPushNotification {
